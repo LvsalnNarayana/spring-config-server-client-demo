@@ -1,5 +1,8 @@
 # Spring Config Server & Client Demo
 
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
+![Java](https://img.shields.io/badge/Java-17%2B-orange)
+
 This project demonstrates a centralized configuration management system using **Spring Cloud Config**. It consists of a **Config Server** that serves properties to multiple **Resource Clients** (microservices), ensuring decoupled and dynamic configuration.
 
 ## 🚀 Purpose and Architecture
