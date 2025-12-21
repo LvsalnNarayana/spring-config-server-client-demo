@@ -1,209 +1,104 @@
+# Spring Config Server & Client Demo
 
-# Spring-Config-Server-Client-Demo
+This project demonstrates a centralized configuration management system using **Spring Cloud Config**. It consists of a **Config Server** that serves properties to multiple **Resource Clients** (microservices), ensuring decoupled and dynamic configuration.
 
-## Overview
+## 🚀 Purpose and Architecture
 
-This project is a **multi-microservice demonstration** of **Spring Cloud Config Server** and **Config Clients** in **Spring Boot 3.x**. It showcases **centralized configuration management** — a foundational pattern in microservices architectures for managing application properties across multiple services and environments without redeployment.
+### What is Spring Cloud Config?
+In a microservices architecture, managing configuration files for dozens of services can be a nightmare. **Spring Cloud Config** provides a server-side and client-side support for externalized configuration in a distributed system. 
 
-The focus is on **production best practices**: Git-backed configuration, client dynamic refresh, encryption/decryption, failover, and security.
+- **Config Server**: A central place to manage external properties for applications across all environments.
+- **Config Client**: A Spring Boot application that fetches its configuration from the Config Server on startup (or refresh).
 
-## Real-World Scenario (Simulated)
+### 🏗️ Application Architecture Diagram
 
-In large-scale microservices ecosystems like **Netflix OSS** (Eureka, Ribbon, Hystrix era):
-- Hundreds of services run in multiple environments (dev, staging, prod).
-- Configuration (DB URLs, feature flags, API keys) changes frequently.
-- Hardcoding properties or rebuilding JARs for config changes is inefficient and error-prone.
-- Centralized config enables instant propagation of changes across the fleet.
+Below is the high-level architecture of this demo:
+![alt text](image.png)
 
-We simulate a typical e-commerce setup with a **Config Server** backed by a Git repository and multiple client services (Product, Order, Notification) that pull their configuration dynamically.
+---
 
-## Microservices Involved
+## 📦 Project Components
 
-| Service                  | Responsibility                                                                 | Port  |
-|--------------------------|--------------------------------------------------------------------------------|-------|
-| **config-server**        | Central Config Server: serves properties from Git repository                   | 8888  |
-| **eureka-server**        | Service discovery (Netflix Eureka) — clients register here                     | 8761  |
-| **product-service**      | Sample client: manages products, pulls config from server                      | 8081  |
-| **order-service**        | Sample client: handles orders, uses feature flags from central config          | 8082  |
-| **notification-service** | Sample client: sends notifications, demonstrates encryption/decryption        | 8083  |
+### 1. Config Server (`config-server`)
+- **Port**: `8888`
+- **Role**: Reads configuration files from `classpath:/config-repo` and serves them to clients.
+- **Config Storage**: Uses a local directory inside `src/main/resources/config-repo` simulating a Git repository.
 
-## Tech Stack
+### 2. Resource Client 1 (`resource-client-1`)
+- **Port**: `4001` (assigned via Config Server)
+- **Role**: A sample microservice consuming config.
+- **Endpoints**: CRUD operations on `/api/records`.
 
-- Spring Boot 3.x
-- Spring Cloud Config Server & Client
-- Git backend (local or remote repository)
-- Spring Cloud Bus (optional for broadcast refresh)
-- Spring Boot Actuator (/refresh endpoint)
-- Spring Security (optional config server auth)
-- Spring Cloud Netflix Eureka
-- Lombok
-- Maven (multi-module)
-- Docker & Docker Compose
+### 3. Resource Client 2 (`resource-client-2`)
+- **Port**: `4000` (assigned via Config Server)
+- **Role**: A second sample microservice to demonstrate multiple clients.
+- **Endpoints**: CRUD operations on `/api/records`.
 
-## Docker Containers
+---
 
-```yaml
-services:
-  config-server:
-    build: ./config-server
-    ports:
-      - "8888:8888"
-    environment:
-      - GIT_URI=https://github.com/your-repo/config-repo.git  # or local file://
+## 🔄 Request-Response Flow
 
-  eureka-server:
-    build: ./eureka-server
-    ports:
-      - "8761:8761"
+How a client gets its configuration and handles a user request:
 
-  product-service:
-    build: ./product-service
-    depends_on:
-      - config-server
-      - eureka-server
-    ports:
-      - "8081:8081"
+![alt text](request-response-flow.svg)
 
-  order-service:
-    build: ./order-service
-    depends_on:
-      - config-server
-      - eureka-server
-    ports:
-      - "8082:8082"
+```d2
+user_actor: "User/Postman"
+client: "Resource Client"
+config_server: "Config Server"
+repo: "Config Repo"
 
-  notification-service:
-    build: ./notification-service
-    depends_on:
-      - config-server
-      - eureka-server
-    ports:
-      - "8083:8083"
+user_actor -> client: "1. Application BOOT"
+client -> config_server: "2. Request Config\n(/client-name/profile)"
+config_server -> repo: "3. Fetch Properties"
+repo -> config_server: "4. Properties Loaded"
+config_server -> client: "5. Return JSON Config" {style.stroke-dash: 3}
+client -> client: "6. Apply Configuration\n(Port, DB, etc.)"
+
+user_actor -> client: "7. API Request\n(POST /api/records)"
+client -> client: "8. Process Logic"
+client -> user_actor: "9. API Response" {style.stroke-dash: 3}
 ```
 
-Run with: `docker-compose up --build`
+---
 
-## Configuration Strategy
+## 🛠️ How to Run
 
-| Feature                        | Implementation Details                                                  |
-|--------------------------------|-------------------------------------------------------------------------|
-| **Git Backend**                | Multiple YAML files: `application.yml`, `{service-name}.yml`, profiles  |
-| **Profiles**                   | `dev`, `prod` — clients use `spring.profiles.active`                    |
-| **Client Bootstrap**           | `bootstrap.yml` with `spring.cloud.config.uri=http://config-server:8888`|
-| **Dynamic Refresh**            | `@RefreshScope` on beans → POST `/actuator/refresh` triggers reload     |
-| **Encryption/Decryption**      | `{cipher}` prefix in properties → config server decrypts on fetch      |
-| **Fail Fast / Failover**       | Client fails fast if config server down (or fallback to local)         |
-| **Search Paths**               | Multiple repos or paths configurable                                   |
+1.  **Start the Config Server**
+    Navigate to `config-server` and run:
+    ```bash
+    ./mvnw spring-boot:run
+    ```
+    Ensure it starts on port **8888**.
 
-## Key Features
+2.  **Start the Clients**
+    Open two new terminals.
+    Run `resource-client-1`:
+    ```bash
+    ./mvnw spring-boot:run
+    ```
+    Run `resource-client-2`:
+    ```bash
+    ./mvnw spring-boot:run
+    ```
 
-- Centralized Git-backed configuration
-- Environment-specific profiles (dev/prod)
-- Dynamic property refresh without restart
-- Encrypted sensitive properties (passwords, API keys)
-- Client failover and bootstrap behavior
-- Service-specific and shared properties
-- Integration with Eureka discovery
-- Secure config server (optional basic auth)
+3.  **Verify Configuration**
+    - Client 1 should be running on **4001**.
+    - Client 2 should be running on **4000**.
+    - Check logs to confirm they fetched config from `localhost:8888`.
 
-## Config Repository Structure (Example)
+## 🧪 API Documentation & Testing
 
-```
-config-repo/
-├── application.yml          # shared by all clients
-├── product-service.yml
-├── product-service-dev.yml
-├── product-service-prod.yml
-├── order-service.yml
-├── notification-service.yml
-└── encrypted.properties     # with {cipher} values
-```
+A **Postman Collection** is included in the root directory: `spring-config-demo.postman_collection.json`.
 
-### Sample Property
-```yaml
-# In product-service-prod.yml
-database:
-  url: jdbc:postgresql://prod-db:5432/products
-  password: '{cipher}AQ...encrypted...'
-feature:
-  new-ui: true
-```
+Import this file into Postman to test all CRUD operations for both clients.
 
-## Expected Endpoints
+### Endpoints (For both clients)
 
-### Config Server (`http://localhost:8888`)
-
-| Endpoint                              | Description                                      |
-|---------------------------------------|--------------------------------------------------|
-| GET `/{application}/{profile}`        | Raw config (e.g., `/product-service/prod`)      |
-| GET `/{application}-{profile}.yml`    | YAML format                                      |
-| GET `/encrypted/decrypt`              | POST with encrypted text to decrypt              |
-
-### Client Services (e.g., Product Service `http://localhost:8081`)
-
-| Endpoint                              | Description                                      |
-|---------------------------------------|--------------------------------------------------|
-| GET `/api/config/db-url`              | Expose current config value                      |
-| POST `/actuator/refresh`              | Trigger dynamic refresh of @RefreshScope beans   |
-| GET `/actuator/env`                   | Full environment with resolved config            |
-
-## Architecture Overview
-
-```
-Git Repository (config-repo)
-   ↓
-Config Server → reads on demand
-   ↓
-Clients (bootstrap phase)
-   ↓ (spring.cloud.config.uri)
-Product / Order / Notification Services
-   ↓ (@RefreshScope)
-Dynamic refresh via /actuator/refresh
-   ↓
-Eureka Discovery
-```
-
-**Config Flow**:
-1. Client starts → reads `bootstrap.yml` → contacts Config Server
-2. Server fetches from Git → merges `application.yml` + service-specific + profile
-3. Client loads properties → application starts
-4. Change in Git → POST `/actuator/refresh` → reload @RefreshScope beans
-
-## How to Run
-
-1. Clone repository
-2. Set up Git repo (or use local file:// path)
-3. Start Docker: `docker-compose up --build`
-4. Access Eureka: `http://localhost:8761`
-5. Access Config Server: `http://localhost:8888/product-service/dev`
-6. Call client endpoint → see centralized config
-7. Update Git property → POST `/actuator/refresh` on client → new value applied
-
-## Testing Centralized Config
-
-1. Start services → config from Git
-2. Change feature flag in Git → refresh client → behavior changes
-3. Use different profiles → different DB URLs
-4. Encrypt property → client receives decrypted value
-5. Stop config server after startup → client continues (cached)
-6. Fail fast on startup if config server down
-
-## Skills Demonstrated
-
-- Spring Cloud Config Server setup (Git, encryption)
-- Client configuration with bootstrap.yml
-- Dynamic refresh with @RefreshScope
-- Profile-based and service-specific properties
-- Encrypted properties handling
-- Production concerns: failover, security
-- Integration with service discovery
-
-## Future Extensions
-
-- Spring Cloud Bus for broadcast refresh
-- Vault or Consul backend
-- Config server high availability
-- Encrypted Git repo with symmetric key
-- Client-side config fallback
-- Integration with Kubernetes ConfigMaps/Secrets
-
+| Method | URL | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/records` | Get all records |
+| `POST` | `/api/records` | Create a new record |
+| `GET` | `/api/records/{id}` | Get record by ID |
+| `PUT` | `/api/records/{id}` | Update record |
+| `DELETE` | `/api/records/{id}` | Delete record |

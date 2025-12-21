@@ -1,0 +1,109 @@
+direction: down
+
+seq: {
+  shape: sequence_diagram
+  style: {
+    font-color: "#fff"
+  }
+
+  style: {
+    font-size: 14
+    stroke: "#4A5568"
+  }
+
+  user: "User/Postman" {
+    shape: image
+    icon: "https://icons.terrastruct.com/essentials/365-user.svg"
+    width: 60
+    height: 60
+  }
+
+  client: "Resource Client" {
+    style: {
+      stroke: "#3182CE"
+      fill: "#EBF8FF"
+    }
+  }
+
+  config: "Config Server" {
+    style: {
+      stroke: "#805AD5"
+      fill: "#FAF5FF"
+    }
+  }
+
+  repo: "Config Repo" {
+    style: {
+      stroke: "#38A169"
+      fill: "#F0FFF4"
+    }
+  }
+
+  bootstrap: "Bootstrap Phase" {
+    style: {
+      stroke: "#90CDF4"
+      fill: "#F7FAFC"
+      opacity: 0
+    }
+
+    user -> client: "1. Application BOOT" {
+      style: {
+        font-color: "#000"
+      }
+    }
+    client -> config: "2. Request Config\n(/client-name/profile)" {
+      style: {
+        font-color: "#000"
+      }
+    }
+    config -> repo: "3. Fetch Properties" {
+      style: {
+        font-color: "#000"
+      }
+    }
+
+    repo -> config: "4. Properties Loaded" {
+      style: {
+        font-color: "#000"
+      }
+    }
+
+    config -> client: "5. Return Config" {
+      style: {
+        font-color: "#000"
+      }
+    }
+
+    client -> client: "6. Apply Configuration\n(Port, DB, etc.)" {
+      style: {
+        font-color: "#000"
+      }
+    }
+  }
+
+  runtime: "Runtime Phase" {
+    style: {
+      stroke: "#0073DF"
+      fill: "#309BFF"
+      opacity: 0.7
+      font-color: "#000"
+    }
+
+    user -> client: "7. API Request\n(POST /api/records)" {
+      style: {
+        font-color: "#000"
+      }
+    }
+    client -> client: "8. Process Logic" {
+      style: {
+        font-color: "#000"
+      }
+    }
+
+    client -> user: "9. API Response" {
+      style: {
+        font-color: "#000"
+      }
+    }
+  }
+}
