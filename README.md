@@ -42,24 +42,6 @@ How a client gets its configuration and handles a user request:
 
 ![alt text](request-response-flow.svg)
 
-```d2
-user_actor: "User/Postman"
-client: "Resource Client"
-config_server: "Config Server"
-repo: "Config Repo"
-
-user_actor -> client: "1. Application BOOT"
-client -> config_server: "2. Request Config\n(/client-name/profile)"
-config_server -> repo: "3. Fetch Properties"
-repo -> config_server: "4. Properties Loaded"
-config_server -> client: "5. Return JSON Config" {style.stroke-dash: 3}
-client -> client: "6. Apply Configuration\n(Port, DB, etc.)"
-
-user_actor -> client: "7. API Request\n(POST /api/records)"
-client -> client: "8. Process Logic"
-client -> user_actor: "9. API Response" {style.stroke-dash: 3}
-```
-
 ---
 
 ## 🛠️ How to Run
